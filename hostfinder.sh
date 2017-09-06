@@ -24,3 +24,4 @@ done;
 
 grep "[a-zA-Z]$" .afile |  sort -n | cut -f 2 -d " " | uniq
 
+rm .afile .tfile
