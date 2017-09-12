@@ -33,6 +33,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	endTime = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Reduce(&count, &totalCount, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&startTime, &earliestStartTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&endTime, &latestEndTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
