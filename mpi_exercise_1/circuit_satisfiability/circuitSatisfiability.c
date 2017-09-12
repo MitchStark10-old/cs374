@@ -20,7 +20,8 @@ int main (int argc, char *argv[]) {
 	int id = -1, numProcesses = -1;           /* process id */
 	int count = 0;        /* number of solutions */
 	int totalCount = 0;
-	double startTime = 0.0, totalTime = 0.0;
+	double startTime = 0.0, endTime = 0.0;
+	double earliestStartTime = 0.0, latestEndTime = 0.0;
 	startTime = MPI_Wtime();
 
 	MPI_Init(&argc, &argv);
@@ -31,13 +32,15 @@ int main (int argc, char *argv[]) {
 		count += checkCircuit (id, i);
 	}
 
-	totalTime = MPI_Wtime() - startTime;
-
-	printf ("Process %d finished in time %f secs.\n", id, totalTime);
-	fflush (stdout);
+	endTime = MPI_Wtime();
 	MPI_Reduce(&count, &totalCount, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&startTime, &earliestStartTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&endTime, &latestEndTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
 	if (id == 0) {
+		printf ("Process %d finished in time %f secs.\n", id, latestEndTime - earliestStartTime);
 		printf("\nA total of %d solutions were found.\n\n", totalCount);
+		fflush (stdout);
 	}
 	MPI_Finalize();
 	return 0;
