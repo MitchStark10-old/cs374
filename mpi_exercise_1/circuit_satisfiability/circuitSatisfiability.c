@@ -11,17 +11,23 @@
 
 #include <stdio.h>     // printf()
 #include <limits.h>    // UINT_MAX
+#include <mpi.h>
 
 int checkCircuit (int, long);
 
 int main (int argc, char *argv[]) {
    long i;               /* loop variable (64 bits) */
-   int id = 0;           /* process id */
+   int id = -1, numProcesses = -1;           /* process id */
    int count = 0;        /* number of solutions */
+   int totalCount = 0;
    double startTime = 0.0, totalTime = 0.0;
    startTime = MPI_Wtime();
 
-   for (i = 0; i <= UINT_MAX; i++) {
+   MPI_Init(&argc, &argv);
+   MPI_Comm_rank(MPI_COMM_WORLD, &id);
+   MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+
+   for (i = id; i <= UINT_MAX; i += numProcesses) {
       count += checkCircuit (id, i);
    }
 
@@ -29,8 +35,9 @@ int main (int argc, char *argv[]) {
 
    printf ("Process %d finished in time %f secs.\n", id, totalTime);
    fflush (stdout);
-
-   printf("\nA total of %d solutions were found.\n\n", count);
+   MPI_Reduce(&count, &totalCount, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+   printf("\nA total of %d solutions were found.\n\n", totalCount);
+   MPI_Finalize();
    return 0;
 }
 
