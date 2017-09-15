@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
-    const int SIZE = numProcesses * 2;
+    const int SIZE = numProcesses * 4;
     char * sendString = NULL;
     char * receivedString = NULL;
 
@@ -35,11 +35,12 @@ int main(int argc, char** argv) {
 
     if (id == 0) {
         //Send a message containg rank to process 1
-        sprintf(sendString, "1 ");
+        sprintf(sendString, "0 ");
         MPI_Send(sendString, strlen(sendString) + 1, MPI_CHAR, 1, 1, MPI_COMM_WORLD);
         //Recieve a message from n-1 process
         MPI_Recv(receivedString, SIZE, MPI_CHAR, numProcesses - 1, 1, MPI_COMM_WORLD, &status);
         //Print the message and time
+        printf("%s\n", receivedString);
     } else {
         //Recieve message from rank i - 1
         MPI_Recv(receivedString, SIZE, MPI_CHAR, id - 1, 1, MPI_COMM_WORLD, &status);
