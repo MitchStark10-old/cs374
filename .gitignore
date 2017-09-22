@@ -1,7 +1,9 @@
 */hosts*
 */*.out
 *.txt
+*.o
 spmd
+Fire
 parallelLoopSlices
 parallelLoopChunks
 circuitSatisfiability

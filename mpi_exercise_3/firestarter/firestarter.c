@@ -41,6 +41,7 @@ int main(int argc, char ** argv) {
     int i_prob;
     int n_probs=101;
     int do_display=1;
+    int iterations;
     xgraph thegraph;
 
     // check command line arguments
@@ -76,15 +77,15 @@ int main(int argc, char ** argv) {
         percent_burned[i_prob]=0.0;
         for (i_trial=0; i_trial < n_trials; i_trial++) {
             //burn until fire is gone
-            burn_until_out(forest_size,forest,prob_spread[i_prob],
+            iterations = burn_until_out(forest_size,forest,prob_spread[i_prob],
                 forest_size/2,forest_size/2);
             percent_burned[i_prob]+=get_percent_burned(forest_size,forest);
         }
         percent_burned[i_prob]/=n_trials;
 
         // print output
-        printf("%lf , %lf\n",prob_spread[i_prob],
-            percent_burned[i_prob]);
+        printf("Probability = %lf , %% Burned = %lf, Iterations = %d\n",prob_spread[i_prob],
+            percent_burned[i_prob], iterations);
     }
 
     // plot graph

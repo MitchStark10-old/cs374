@@ -1,7 +1,6 @@
-/* messagePassing.c
- * ... illustrates the use of the MPI_Send() and MPI_Recv() commands...
- * Joel Adams, Calvin College, November 2009.
- */
+/**
+Mitch Stark, Calvin College, Fall 2017
+*/
 
 #include <stdio.h>
 #include <mpi.h>
