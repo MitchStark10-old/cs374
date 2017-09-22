@@ -1,8 +1,10 @@
 /* firestarter.c 
  * David Joiner
  * Usage: Fire [forestSize(20)] [numTrials(5000)] * [numProbabilities(101)] [showGraph(1)]
+ * Usage (with MPI) : mpirun Fire -np 1 -machinefile ../../host_information/hosts *ABOVE_USAGE*
  */
 #include <stdio.h>
+#include <mpi.h>
 #include <stdlib.h>
 #include "X-graph.h"
 
@@ -41,11 +43,19 @@ int main(int argc, char ** argv) {
     int i_prob;
     int n_probs=101;
     int do_display=1;
-    int iterations;
+    int average_iterations;
     xgraph thegraph;
 
-    // check command line arguments
+    //initialize mpi arguments
+    int id = -1, numProcesses = -1;
 
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+    printf("Specified %d processes!", numProcesses);
+
+    // check command line arguments
     if (argc > 1) {
         sscanf(argv[1],"%d",&forest_size);
     }
@@ -70,23 +80,28 @@ int main(int argc, char ** argv) {
     // average burn and output
     prob_step = (prob_max-prob_min)/(double)(n_probs-1);
     printf("Probability of fire spreading, Average percent burned\n");
+    
+    //parallelize the trials, put the trials on the outer loop
     for (i_prob = 0 ; i_prob < n_probs; i_prob++) {
         //for a number of trials, calculate average
         //percent burn
         prob_spread[i_prob] = prob_min + (double)i_prob * prob_step;
         percent_burned[i_prob]=0.0;
+        average_iterations=0;
         for (i_trial=0; i_trial < n_trials; i_trial++) {
             //burn until fire is gone
-            iterations = burn_until_out(forest_size,forest,prob_spread[i_prob],
+            average_iterations += burn_until_out(forest_size,forest,prob_spread[i_prob],
                 forest_size/2,forest_size/2);
             percent_burned[i_prob]+=get_percent_burned(forest_size,forest);
         }
+        average_iterations/=n_trials;
         percent_burned[i_prob]/=n_trials;
 
         // print output
         printf("Probability = %lf , %% Burned = %lf, Iterations = %d\n",prob_spread[i_prob],
-            percent_burned[i_prob], iterations);
+            percent_burned[i_prob], average_iterations);
     }
+    MPI_Finalize();
 
     // plot graph
     if (do_display==1) {
