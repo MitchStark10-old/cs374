@@ -38,13 +38,13 @@ int main(int argc, char ** argv) {
     double prob_step;
     int **forest;
     double * percent_burned;
+    double * average_iterations;
     int i_trial;
     int i;
     int n_trials=5000;
     int i_prob;
     int n_probs=101;
     int do_display=1;
-    int average_iterations;
     xgraph thegraph;
 
     //initialize mpi arguments
@@ -122,12 +122,12 @@ int main(int argc, char ** argv) {
     }
 
     //Ensure that all processes have completed before iterating one last time to print
-    MPI_Barrier();
+    MPI_Barrier(MPI_COMM_WORLD);
     for(i=0; i < n_probs; i++) {
         average_iterations[i]/=n_trials;
         percent_burned[i]/=n_trials;
 
-        printf("Probability = %lf , %% Burned = %lf, Iterations = %d\n",prob_spread[i],
+        printf("Probability = %lf , %% Burned = %lf, Iterations = %lf\n",prob_spread[i],
             percent_burned[i], average_iterations[i]);
     }
     MPI_Finalize();
