@@ -93,7 +93,6 @@ int main(int argc, char ** argv) {
     // for a number of probabilities, calculate
     // average burn and output
     prob_step = (prob_max-prob_min)/(double)(n_probs-1);
-    printf("Probability of fire spreading, Average percent burned\n");
 
     for(i_trial=id; i_trial < n_trials; i_trial += numProcesses) {
         for(i_prob=0; i_prob < n_probs; i_prob++) {
