@@ -113,7 +113,6 @@ int main(int argc, char ** argv) {
     
     if (id == 0) {
         for(i=0; i < n_probs; i++) {
-            printf("original global: %lf local percent burned: %lf\n", global_percent_burned[i], percent_burned[i]);
             global_average_iterations[i]/=n_trials;
             global_percent_burned[i]/=n_trials;
 
