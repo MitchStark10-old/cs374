@@ -40,6 +40,8 @@ int main(int argc, char ** argv) {
     int **forest;
     double * percent_burned;
     double * average_iterations;
+    double * global_percent_burned;
+    double * global_average_iterations;
     int i_trial;
     int i;
     int n_trials=5000;
@@ -72,6 +74,8 @@ int main(int argc, char ** argv) {
     prob_spread = (double *) malloc (n_probs*sizeof(double));
     percent_burned = (double *) malloc (n_probs*sizeof(double));
     average_iterations = (double *) malloc (n_probs*sizeof(double));
+    global_percent_burned = (double *) malloc (n_probs*sizeof(double));
+    global_average_iterations = (double *) malloc (n_probs*sizeof(double));
 
     //initialize the arrays
     for(i=0; i < n_probs; i++) {
@@ -91,7 +95,7 @@ int main(int argc, char ** argv) {
     prob_step = (prob_max-prob_min)/(double)(n_probs-1);
     printf("Probability of fire spreading, Average percent burned\n");
 
-    for(i_trial=0; i_trial < n_trials; i_trial++) {
+    for(i_trial=id; i_trial < n_trials; i_trial += numProcesses) {
         for(i_prob=0; i_prob < n_probs; i_prob++) {
             prob_spread[i_prob] = prob_min + (double)i_prob * prob_step;
 
@@ -104,15 +108,18 @@ int main(int argc, char ** argv) {
 
     //Ensure that all processes have completed before iterating one last time to print
     MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Reduce(percent_burned, global_percent_burned, n_probs, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(average_iterations, global_average_iterations, n_probs, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
     end_time = MPI_Wtime();
     
     if (id == 0) {
         for(i=0; i < n_probs; i++) {
-            average_iterations[i]/=n_trials;
-            percent_burned[i]/=n_trials;
+            printf("original global: %lf local percent burned: %lf\n", global_percent_burned[i], percent_burned[i]);
+            global_average_iterations[i]/=n_trials;
+            global_percent_burned[i]/=n_trials;
 
-            printf("Probability = %lf , %% Burned = %lf, Iterations = %lf\n",prob_spread[i],
-                    percent_burned[i], average_iterations[i]);
+            printf("Probability = %lf , %% Burned = %lf, Iterations = %lf\n", prob_spread[i],
+                    global_percent_burned[i], global_average_iterations[i]);
         }
 
         printf("Total time elapsed: %f\n", end_time - start_time);
