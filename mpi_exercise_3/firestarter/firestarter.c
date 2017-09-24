@@ -36,6 +36,7 @@ int main(int argc, char ** argv) {
     double prob_min=0.0;
     double prob_max=1.0;
     double prob_step;
+    double start_time = -1, end_time = -1;
     int **forest;
     double * percent_burned;
     double * average_iterations;
@@ -79,6 +80,8 @@ int main(int argc, char ** argv) {
         average_iterations[i] = 0;
     }
 
+    start_time = MPI_Wtime();
+
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
@@ -88,7 +91,7 @@ int main(int argc, char ** argv) {
     // average burn and output
     prob_step = (prob_max-prob_min)/(double)(n_probs-1);
     printf("Probability of fire spreading, Average percent burned\n");
-    
+
     //parallelize the trials, put the trials on the outer loop
     // for (i_prob = 0 ; i_prob < n_probs; i_prob++) {
     //     //for a number of trials, calculate average
@@ -113,9 +116,9 @@ int main(int argc, char ** argv) {
     for(i_trial=0; i_trial < n_trials; i_trial++) {
         for(i_prob=0; i_prob < n_probs; i_prob++) {
             prob_spread[i_prob] = prob_min + (double)i_prob * prob_step;
-            
+
             average_iterations[i_prob]+=burn_until_out(forest_size,forest,prob_spread[i_prob],
-                forest_size/2,forest_size/2);
+                    forest_size/2,forest_size/2);
 
             percent_burned[i_prob]+=get_percent_burned(forest_size,forest);
         }
@@ -123,13 +126,22 @@ int main(int argc, char ** argv) {
 
     //Ensure that all processes have completed before iterating one last time to print
     MPI_Barrier(MPI_COMM_WORLD);
-    for(i=0; i < n_probs; i++) {
-        average_iterations[i]/=n_trials;
-        percent_burned[i]/=n_trials;
+    end_time = MPI_Wtime();
+    
+    if (id == 0) {
+        for(i=0; i < n_probs; i++) {
+            average_iterations[i]/=n_trials;
+            percent_burned[i]/=n_trials;
 
-        printf("Probability = %lf , %% Burned = %lf, Iterations = %lf\n",prob_spread[i],
-            percent_burned[i], average_iterations[i]);
+            printf("Probability = %lf , %% Burned = %lf, Iterations = %lf\n",prob_spread[i],
+                    percent_burned[i], average_iterations[i]);
+        }
+
+        printf("Total time elapsed: %f\n", end_time - start_time);
     }
+
+
+
     MPI_Finalize();
 
     // plot graph
@@ -156,7 +168,7 @@ void seed_by_time(int offset) {
 }
 
 int burn_until_out(int forest_size,int ** forest, double prob_spread,
-    int start_i, int start_j) {
+        int start_i, int start_j) {
     int count;
 
     initialize_forest(forest_size,forest);
