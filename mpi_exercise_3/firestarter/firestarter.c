@@ -39,6 +39,7 @@ int main(int argc, char ** argv) {
     int **forest;
     double * percent_burned;
     int i_trial;
+    int i;
     int n_trials=5000;
     int i_prob;
     int n_probs=101;
@@ -48,12 +49,6 @@ int main(int argc, char ** argv) {
 
     //initialize mpi arguments
     int id = -1, numProcesses = -1;
-
-
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &id);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
-    printf("Specified %d processes!", numProcesses);
 
     // check command line arguments
     if (argc > 1) {
@@ -75,6 +70,19 @@ int main(int argc, char ** argv) {
     forest=allocate_forest(forest_size);
     prob_spread = (double *) malloc (n_probs*sizeof(double));
     percent_burned = (double *) malloc (n_probs*sizeof(double));
+    average_iterations = (double *) malloc (n_probs*sizeof(double));
+
+    //initialize the arrays
+    for(i=0; i < n_probs; i++) {
+        prob_spread[i] = 0;
+        percent_burned[i] = 0;
+        average_iterations[i] = 0;
+    }
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+    printf("Specified %d processes!", numProcesses);
 
     // for a number of probabilities, calculate
     // average burn and output
@@ -82,24 +90,45 @@ int main(int argc, char ** argv) {
     printf("Probability of fire spreading, Average percent burned\n");
     
     //parallelize the trials, put the trials on the outer loop
-    for (i_prob = 0 ; i_prob < n_probs; i_prob++) {
-        //for a number of trials, calculate average
-        //percent burn
-        prob_spread[i_prob] = prob_min + (double)i_prob * prob_step;
-        percent_burned[i_prob]=0.0;
-        average_iterations=0;
-        for (i_trial=0; i_trial < n_trials; i_trial++) {
-            //burn until fire is gone
-            average_iterations += burn_until_out(forest_size,forest,prob_spread[i_prob],
+    // for (i_prob = 0 ; i_prob < n_probs; i_prob++) {
+    //     //for a number of trials, calculate average
+    //     //percent burn
+    //     prob_spread[i_prob] = prob_min + (double)i_prob * prob_step;
+    //     percent_burned[i_prob]=0.0;
+    //     average_iterations=0;
+    //     for (i_trial=0; i_trial < n_trials; i_trial++) {
+    //         //burn until fire is gone
+    //         average_iterations += burn_until_out(forest_size,forest,prob_spread[i_prob],
+    //             forest_size/2,forest_size/2);
+    //         percent_burned[i_prob]+=get_percent_burned(forest_size,forest);
+    //     }
+    //     average_iterations/=n_trials;
+    //     percent_burned[i_prob]/=n_trials;
+
+    //     // print output
+    //     printf("Probability = %lf , %% Burned = %lf, Iterations = %d\n",prob_spread[i_prob],
+    //         percent_burned[i_prob], average_iterations);
+    // }
+
+    for(i_trial=0; i_trial < n_trials; i_trial++) {
+        for(i_prob=0; i_prob < n_probs; i_prob++) {
+            prob_spread[i_prob] = prob_min + (double)i_prob * prob_step;
+            
+            average_iterations[i_prob]+=burn_until_out(forest_size,forest,prob_spread[i_prob],
                 forest_size/2,forest_size/2);
+
             percent_burned[i_prob]+=get_percent_burned(forest_size,forest);
         }
-        average_iterations/=n_trials;
-        percent_burned[i_prob]/=n_trials;
+    }
 
-        // print output
-        printf("Probability = %lf , %% Burned = %lf, Iterations = %d\n",prob_spread[i_prob],
-            percent_burned[i_prob], average_iterations);
+    //Ensure that all processes have completed before iterating one last time to print
+    MPI_Barrier();
+    for(i=0; i < n_probs; i++) {
+        average_iterations[i]/=n_trials;
+        percent_burned[i]/=n_trials;
+
+        printf("Probability = %lf , %% Burned = %lf, Iterations = %d\n",prob_spread[i],
+            percent_burned[i], average_iterations[i]);
     }
     MPI_Finalize();
 
@@ -114,6 +143,7 @@ int main(int argc, char ** argv) {
     delete_forest(forest_size,forest);
     free(prob_spread);
     free(percent_burned);
+    free(average_iterations);
     return 0;
 }
 
