@@ -3,6 +3,8 @@
  * Written Winter, 1998, W. David Laverell.
  *
  * Refactored Winter 2002, Joel Adams. 
+ * Parallel additions made by:
+ * Mitch Stark, Fall 2017
  */
 
 #include <stdio.h>
@@ -48,7 +50,9 @@ int main(int argc, char* argv[])
                ix       = 0,
                iy       = 0,
                button   = 0,
-               id       = 0;
+               id       = 0,
+               numProcesses = -1,
+               chunkSize = -1;
     double     spacing  = 0.005,
                x        = 0.0,
                y        = 0.0,
@@ -73,8 +77,15 @@ int main(int argc, char* argv[])
                          getDisplay(),
                          -1, -1,
                          WINDOW_SIZE, WINDOW_SIZE, 0 );
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+    chunkSize = WINDOW_SIZE / numProcesses;
 
-    for (ix = 0; ix < WINDOW_SIZE; ix++)
+    if (id == numProcesses - 1) {
+        chunkSize += WINDOW_SIZE % numProcesses;
+    }
+
+    for (ix = id; ix < (WINDOW_SIZE / (id + 1)) + chunkSize; ix++)
     {
        for (iy = 0; iy < WINDOW_SIZE; iy++)
        {
