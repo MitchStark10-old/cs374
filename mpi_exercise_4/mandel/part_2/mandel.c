@@ -3,8 +3,6 @@
  * Written Winter, 1998, W. David Laverell.
  *
  * Refactored Winter 2002, Joel Adams. 
- * Parallel additions made by:
- * Mitch Stark, Fall 2017
  */
 
 #include <stdio.h>
@@ -51,8 +49,7 @@ int main(int argc, char* argv[])
                iy       = 0,
                button   = 0,
                id       = 0,
-               numProcesses = -1,
-               chunkSize = -1;
+               numProcesses;
     double     spacing  = 0.005,
                x        = 0.0,
                y        = 0.0,
@@ -77,35 +74,36 @@ int main(int argc, char* argv[])
                          getDisplay(),
                          -1, -1,
                          WINDOW_SIZE, WINDOW_SIZE, 0 );
+
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
-    chunkSize = WINDOW_SIZE / numProcesses;
 
-    if (id == numProcesses - 1) {
-        chunkSize += WINDOW_SIZE % numProcesses;
-    }
+    //Remove for-loop dealing with x coordinates, this will be handled for master
 
-    for (ix = id; ix < (WINDOW_SIZE / (id + 1)) + chunkSize; ix++)
-    {
-       for (iy = 0; iy < WINDOW_SIZE; iy++)
-       {
-          c_real = (ix - 400) * spacing - x_center;
-          c_imag = (iy - 400) * spacing - y_center;
-          x = y = 0.0;
-          n = 0;
 
-          while (n < 50 && distance(x, y) < 4.0)
-          {
-             compute(x, y, c_real, c_imag, &x, &y);
-             n++;
-          }
+    if (numProcesses == 1) {
+        for (ix = 0; ix < WINDOW_SIZE; ix++)
+        {
+            for (iy = 0; iy < WINDOW_SIZE; iy++)
+            {
+                c_real = (ix - 400) * spacing - x_center;
+                c_imag = (iy - 400) * spacing - y_center;
+                x = y = 0.0;
+                n = 0;
 
-          if (n < 50) {
-             MPE_Draw_point(graph, ix, iy, MPE_RED);
-          } else {
-             MPE_Draw_point(graph, ix, iy, MPE_BLACK);
-          }
-       }
+                while (n < 50 && distance(x, y) < 4.0)
+                {
+                    compute(x, y, c_real, c_imag, &x, &y);
+                    n++;
+                }
+
+                if (n < 50) {
+                    MPE_Draw_point(graph, ix, iy, MPE_RED);
+                } else {
+                    MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+                }
+            }
+        }
     }
 
     // pause until mouse-click so the program doesn't terminate
