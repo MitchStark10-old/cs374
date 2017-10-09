@@ -1,5 +1,5 @@
 /* firestarter.c 
- * David Joiner
+ * David Joiner, Mitch Stark
  * Usage: Fire [forestSize(20)] [numTrials(5000)] * [numProbabilities(101)] [showGraph(1)]
  * Usage (with MPI) : mpirun Fire -np 1 -machinefile ../../host_information/hosts *ABOVE_USAGE*
  */

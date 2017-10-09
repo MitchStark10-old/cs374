@@ -2,6 +2,7 @@
 */*.out
 *.txt
 *.o
+*/run
 spmd
 Fire
 parallelLoopSlices
