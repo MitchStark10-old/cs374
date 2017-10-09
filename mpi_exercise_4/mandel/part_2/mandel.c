@@ -104,6 +104,17 @@ int main(int argc, char* argv[])
                 }
             }
         }
+    } else {
+        /*
+        Process 0 -
+            Compute row 0
+            Wait to receive a row
+            After receiving, collect data into single uniform array
+            Send worker new row to compute
+            Continue until array has been filled
+        All other Processes -
+            
+        */
     }
 
     // pause until mouse-click so the program doesn't terminate
