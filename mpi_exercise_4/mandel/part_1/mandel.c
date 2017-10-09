@@ -62,19 +62,15 @@ int main(int argc, char* argv[])
                c_imag   = 0.0,
                x_center = 1.0,
                y_center = 0.0;
-   /*
-    Future Mitch,
-    You dummy. To print the entire graph, you need one boolean array that states either true for red or false for black.
-    Change all of the crap you've done dealing with ***char and sprintf and sscanf to try to store the computed x and y values, it's useless. All you need to do is save n < 50 to graph_data[ix][iy].
-    This should fix the problem.
-    Love,
-    A younger, dumber Mitch
-   */
+
    bool **graph_data = malloc(WINDOW_SIZE * sizeof(bool *));
+   bool **global_graph_data = malloc(WINDOW_SIZE * sizeof(bool *));
+
    for (int i = 0; i < WINDOW_SIZE; i++) {
         graph_data[i] = malloc(WINDOW_SIZE * sizeof(bool));
+        global_graph_data[i] = malloc(WINDOW_SIZE * sizeof(bool));
    }
-   bool **global_graph_data = (bool **)malloc(WINDOW_SIZE * WINDOW_SIZE * sizeof(bool));
+
 
 
 
@@ -102,8 +98,8 @@ int main(int argc, char* argv[])
         chunkSize += WINDOW_SIZE % numProcesses;
     }
 
-    //for (ix = id; ix < (WINDOW_SIZE / (id + 1)) + chunkSize; ix++)
-    for (ix = 0; ix < WINDOW_SIZE; ix++)
+    for (ix = (WINDOW_SIZE / numProcesses) * id; ix < ((WINDOW_SIZE / numProcesses) * id) + chunkSize; ix++)
+ //   for(ix = 0; ix < (WINDOW_SIZE / (id + 1)); ix++)
     {
        for (iy = 0; iy < WINDOW_SIZE; iy++)
        {
@@ -128,14 +124,20 @@ int main(int argc, char* argv[])
           }*/
        }
     }
-
-
-    for(ix = 0; ix < WINDOW_SIZE; ix++) {
-        for (iy = 0; iy < WINDOW_SIZE; iy++) {
-            if (graph_data[ix][iy]) {
-                MPE_Draw_point(graph, ix, iy, MPE_RED);
-            } else {
-                MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+    
+    for(int i = 0; i < WINDOW_SIZE; i++) {
+        //reduce all local arrays
+        MPI_Reduce(graph_data[i], global_graph_data[i], WINDOW_SIZE, MPI_C_BOOL, MPI_LOR, 0, MPI_COMM_WORLD);
+    }
+    
+    if (id == 0) {
+        for(ix = 0; ix < WINDOW_SIZE; ix++) {
+            for (iy = 0; iy < WINDOW_SIZE; iy++) {
+                if (global_graph_data[ix][iy]) {
+                    MPE_Draw_point(graph, ix, iy, MPE_RED);
+                } else {
+                    MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+                }
             }
         }
     }
