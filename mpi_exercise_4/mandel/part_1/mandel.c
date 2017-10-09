@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         chunkSize += WINDOW_SIZE % numProcesses;
     }
 
-    for (ix = id; ix < (WINDOW_SIZE / (id + 1)) + chunkSize; ix++)
+    for (ix = (WINDOW_SIZE / (id + 1)); ix < (WINDOW_SIZE / (id + 1)) + chunkSize; ix++)
     {
        for (iy = 0; iy < WINDOW_SIZE; iy++)
        {
