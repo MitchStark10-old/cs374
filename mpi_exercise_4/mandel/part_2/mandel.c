@@ -128,9 +128,7 @@ int main(int argc, char* argv[])
                 MPI_Recv(row_data, WINDOW_SIZE, MPI_C_BOOL, MPI_ANY_SOURCE, i, MPI_COMM_WORLD, &status);
                 graph_data[i] = row_data;
                 for (int itest = 0; itest < WINDOW_SIZE; itest++) {
-                   // printf("data point: %d, %d", i, itest);
-                   // printf("received array: %d", row_data[itest]);
-                   // printf("graph data: %d\n\n\n", graph_data[i][itest]);
+                   //this works, but the below print statement does not...
                    if (graph_data[i][itest]) {
                         MPE_Draw_point(graph, i, itest, MPE_RED);
                    } else {
@@ -140,6 +138,18 @@ int main(int argc, char* argv[])
                 next_row_to_compute = i + (numProcesses - 1);
                 MPI_Send(&next_row_to_compute, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
             }
+/*
+NOTE: This print statement for whatever reason did not work, the graph_data was simply all "1"
+            for(ix = 0; ix < WINDOW_SIZE; ix++) {
+                for(iy = 0; iy < WINDOW_SIZE; iy++) {
+                    if (graph_data[ix][iy]) {
+                        MPE_Draw_point(graph, ix, iy, MPE_RED);
+                    } else {
+                        MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+                    }
+                }
+            }
+ */
         } else {
        /*
         All other Processes -
@@ -160,7 +170,6 @@ int main(int argc, char* argv[])
                         compute(x, y, c_real, c_imag, &x, &y);
                         n++;
                     }
- //                   printf("adding data point: %d - %d: %d\n", row_to_compute, iy, (n < 50));
                     row_data[iy] = (n < 50);
                 }
 
@@ -178,16 +187,6 @@ int main(int argc, char* argv[])
 
     // pause until mouse-click so the program doesn't terminate
     if (id == 0) {
- //       for(ix = 0; ix < WINDOW_SIZE; ix++) {
-   //         for(iy = 0; iy < WINDOW_SIZE; iy++) {
-     //           printf("final data point: (%d, %d) = %d\n", ix, iy, graph_data[ix][iy]);
-       //         if (graph_data[ix][iy]) {
-         //           MPE_Draw_point(graph, ix, iy, MPE_RED);
-           //     } else {
-             //       MPE_Draw_point(graph, ix, iy, MPE_BLACK);
-               // }
-           // }
-        //}
         printf("\nClick in the window to continue...\n");
         MPE_Get_mouse_press( graph, &ix, &iy, &button );
     }
