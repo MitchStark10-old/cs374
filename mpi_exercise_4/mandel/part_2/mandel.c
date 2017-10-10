@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
                 next_row_to_compute = row_num + numProcesses;
                 MPI_Send(&next_row_to_compute, 1, MPI_INT, status.MPI_SOURCE, tag, MPI_COMM_WORLD);
             }
-        }
+        } else {
        /*
         All other Processes -
             Computer row ID - 1
@@ -142,6 +142,28 @@ int main(int argc, char* argv[])
             Recieve new row to compute
             if tag != 0 -> exit
         */
+            row_to_compute = id;
+            while(true) {
+                for(iy = 0; iy < WINDOW_SIZE; iy++) {
+                    c_real = (row_to_compute - 400) * spacing - x_center;
+                    c_imag = (iy - 400) * spacing - y_center;
+                    x = y = 0.0;
+                    n = 0;
+
+                    while (n < 50 && distance(x, y) < 4.0) {
+                        compute(x, y, c_real, c_imag, &x, &y);
+                        n++;
+                    }
+
+                    row_data[iy] = (n < 50);
+                }
+
+                //send row
+
+                //recieve new row
+            }
+        }
+
     }
 
     // pause until mouse-click so the program doesn't terminate
