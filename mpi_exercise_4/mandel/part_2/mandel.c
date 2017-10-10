@@ -51,10 +51,9 @@ int main(int argc, char* argv[])
                iy       = 0,
                button   = 0,
                id       = 0,
-               tag      = 0,
-               row_num = -1,
                numProcesses,
-               next_row_to_compute;
+               next_row_to_compute,
+               row_to_compute;
     double     spacing  = 0.005,
                x        = 0.0,
                y        = 0.0,
@@ -126,13 +125,20 @@ int main(int argc, char* argv[])
        */
         if (id == 0) {
             for(int i = 0; i < WINDOW_SIZE; i++) {
-                MPI_Recv(row_data, WINDOW_SIZE, MPI_C_BOOL, MPI_ANY_SOURCE, row_num, MPI_COMM_WORLD, &status);
-                graph_data[row_num] = row_data;
-                if (row_num + numProcesses >= WINDOW_SIZE) {
-                    tag = 1;
+                MPI_Recv(row_data, WINDOW_SIZE, MPI_C_BOOL, MPI_ANY_SOURCE, i, MPI_COMM_WORLD, &status);
+                graph_data[i] = row_data;
+                for (int itest = 0; itest < WINDOW_SIZE; itest++) {
+                   // printf("data point: %d, %d", i, itest);
+                   // printf("received array: %d", row_data[itest]);
+                   // printf("graph data: %d\n\n\n", graph_data[i][itest]);
+                   if (graph_data[i][itest]) {
+                        MPE_Draw_point(graph, i, itest, MPE_RED);
+                   } else {
+                        MPE_Draw_point(graph, i, itest, MPE_BLACK);
+                   }
                 }
-                next_row_to_compute = row_num + numProcesses;
-                MPI_Send(&next_row_to_compute, 1, MPI_INT, status.MPI_SOURCE, tag, MPI_COMM_WORLD);
+                next_row_to_compute = i + (numProcesses - 1);
+                MPI_Send(&next_row_to_compute, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
             }
         } else {
        /*
@@ -142,7 +148,7 @@ int main(int argc, char* argv[])
             Recieve new row to compute
             if tag != 0 -> exit
         */
-            row_to_compute = id;
+            row_to_compute = id - 1;
             while(true) {
                 for(iy = 0; iy < WINDOW_SIZE; iy++) {
                     c_real = (row_to_compute - 400) * spacing - x_center;
@@ -154,13 +160,17 @@ int main(int argc, char* argv[])
                         compute(x, y, c_real, c_imag, &x, &y);
                         n++;
                     }
-
+ //                   printf("adding data point: %d - %d: %d\n", row_to_compute, iy, (n < 50));
                     row_data[iy] = (n < 50);
                 }
 
                 //send row
+                MPI_Send(row_data, WINDOW_SIZE, MPI_C_BOOL, 0, row_to_compute, MPI_COMM_WORLD);
 
                 //recieve new row
+                MPI_Recv(&row_to_compute, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+
+                if (row_to_compute > (WINDOW_SIZE - 1)) break;
             }
         }
 
@@ -168,6 +178,16 @@ int main(int argc, char* argv[])
 
     // pause until mouse-click so the program doesn't terminate
     if (id == 0) {
+ //       for(ix = 0; ix < WINDOW_SIZE; ix++) {
+   //         for(iy = 0; iy < WINDOW_SIZE; iy++) {
+     //           printf("final data point: (%d, %d) = %d\n", ix, iy, graph_data[ix][iy]);
+       //         if (graph_data[ix][iy]) {
+         //           MPE_Draw_point(graph, ix, iy, MPE_RED);
+           //     } else {
+             //       MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+               // }
+           // }
+        //}
         printf("\nClick in the window to continue...\n");
         MPE_Get_mouse_press( graph, &ix, &iy, &button );
     }
