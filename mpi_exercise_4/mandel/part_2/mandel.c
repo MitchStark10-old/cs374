@@ -5,6 +5,8 @@
  * Refactored Winter 2002, Joel Adams. 
  */
 
+#include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
@@ -49,7 +51,10 @@ int main(int argc, char* argv[])
                iy       = 0,
                button   = 0,
                id       = 0,
-               numProcesses;
+               tag      = 0,
+               row_num = -1,
+               numProcesses,
+               next_row_to_compute;
     double     spacing  = 0.005,
                x        = 0.0,
                y        = 0.0,
@@ -57,6 +62,13 @@ int main(int argc, char* argv[])
                c_imag   = 0.0,
                x_center = 1.0,
                y_center = 0.0;
+    MPI_Status status;
+    bool **graph_data = malloc(WINDOW_SIZE * sizeof(bool *));
+    bool *row_data = malloc(WINDOW_SIZE * sizeof(bool));
+
+    for(int i = 0; i < WINDOW_SIZE; i++) {
+        graph_data[i] = malloc(WINDOW_SIZE * sizeof(bool));
+    }
 
     MPE_XGraph graph;
 
@@ -107,13 +119,28 @@ int main(int argc, char* argv[])
     } else {
         /*
         Process 0 -
-            Compute row 0
             Wait to receive a row
             After receiving, collect data into single uniform array
             Send worker new row to compute
             Continue until array has been filled
+       */
+        if (id == 0) {
+            for(int i = 0; i < WINDOW_SIZE; i++) {
+                MPI_Recv(row_data, WINDOW_SIZE, MPI_C_BOOL, MPI_ANY_SOURCE, row_num, MPI_COMM_WORLD, &status);
+                graph_data[row_num] = row_data;
+                if (row_num + numProcesses >= WINDOW_SIZE) {
+                    tag = 1;
+                }
+                next_row_to_compute = row_num + numProcesses;
+                MPI_Send(&next_row_to_compute, 1, MPI_INT, status.MPI_SOURCE, tag, MPI_COMM_WORLD);
+            }
+        }
+       /*
         All other Processes -
-            
+            Computer row ID - 1
+            Send row to Master
+            Recieve new row to compute
+            if tag != 0 -> exit
         */
     }
 
