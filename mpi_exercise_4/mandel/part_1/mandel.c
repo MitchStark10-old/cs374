@@ -61,7 +61,9 @@ int main(int argc, char* argv[])
                c_real   = 0.0,
                c_imag   = 0.0,
                x_center = 1.0,
-               y_center = 0.0;
+               y_center = 0.0,
+               start_time = -1,
+               end_time = -1;
 
    bool **graph_data = malloc(WINDOW_SIZE * sizeof(bool *));
    bool **global_graph_data = malloc(WINDOW_SIZE * sizeof(bool *));
@@ -92,6 +94,9 @@ int main(int argc, char* argv[])
                          WINDOW_SIZE, WINDOW_SIZE, 0 );
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+    //start time
+    start_time = MPI_Wtime();
+
     chunkSize = WINDOW_SIZE / numProcesses;
 
     if (id == numProcesses - 1) {
@@ -140,6 +145,9 @@ int main(int argc, char* argv[])
                 }
             }
         }
+        //end time
+        end_time = MPI_Wtime();
+        printf("Time: %f seconds\n", end_time - start_time);
     }
 
     // pause until mouse-click so the program doesn't terminate
