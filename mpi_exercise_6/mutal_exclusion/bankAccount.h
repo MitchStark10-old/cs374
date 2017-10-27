@@ -1,7 +1,7 @@
 /* bankAccount.h simulates a simple bank account
- *
- * Joel Adams, Calvin College, Fall 2013.
- */
+*
+* Joel Adams, Calvin College, Fall 2013.
+*/
 
 
 // Shared Variables
@@ -10,15 +10,19 @@ double bankAccountBalance = 0;
 
 // add amount to bankAccountBalance
 void deposit(double amount) {
-   bankAccountBalance += amount;
+    pthread_mutex_lock( &lock );
+    bankAccountBalance += amount;
+    pthread_mutex_unlock( &lock );
 }
 
 // subtract amount from bankAccountBalance
 void withdraw(double amount) {
-   bankAccountBalance -= amount;
+    pthread_mutex_lock( &lock );
+    bankAccountBalance -= amount;
+    pthread_mutex_unlock( &lock );
 }
 
 void cleanup() {
-   pthread_mutex_destroy(&lock);
+    pthread_mutex_destroy(&lock);
 }
 
