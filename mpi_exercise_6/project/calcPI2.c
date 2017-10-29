@@ -12,12 +12,25 @@
 #include <stdlib.h>                // strtoul(), exit(), ...
 #include <pthread.h>               // pthreads
 #include <mpi.h>                   // MPI_Wtime()
+#include "pthreadBarrier.h"
 
 // global variables (shared by all threads 
 volatile long double pi = 0.0;       // our approximation of PI 
+volatile unsigned long * localSums;
 pthread_mutex_t      piLock;         // how we synchronize writes to 'pi' 
 long double          intervals = 0;  // how finely we chop up the integration 
 unsigned long        numThreads = 0; // how many threads we use 
+
+/*
+Takes array of local sums to sum into a value to be added to the pi variable
+*/
+unsigned long reduce(unsigned long numThreads) {
+    unsigned long sum = 0;
+    for(int i = 0; i < numThreads; i++) {
+        sum += localSums[i];
+    }
+    return sum;
+}
 
 /* compute PI using the parallel for loop pattern
  * Parameters: arg, a void* 
@@ -40,12 +53,17 @@ void * computePI(void * arg)
         x = (i + 0.5) * width;
         localSum += 4.0 / (1.0 + x*x);
     }
+    
+    localSum *= width;
+    printf("Before thread id# - %lu\n", threadID);
+    printf("Num threads: %lu\n", numThreads);
+    localSums[threadID] = localSum;
+    printf("After\n");
+    pthreadBarrier(numThreads);
 
-    localSum *= width; 
-
-    pthread_mutex_lock(&piLock);
-    pi += localSum;
-    pthread_mutex_unlock(&piLock); 
+    if (threadID == 0) {
+        pi += reduce(numThreads);        
+    }
 
     return NULL;
 } 
@@ -72,7 +90,6 @@ void processCommandLine(int argc, char ** argv) {
       exit(1);
    }
 }
-      
 
 int main(int argc, char **argv) {
     pthread_t * threads;            // dynamic array of threads 
@@ -85,6 +102,7 @@ int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
 
+    localSums = malloc(numThreads*sizeof(unsigned long));
     threads = malloc(numThreads*sizeof(pthread_t));
     threadID = malloc(numThreads*sizeof(unsigned long));
     pthread_mutex_init(&piLock, NULL);
@@ -109,4 +127,3 @@ int main(int argc, char **argv) {
     MPI_Finalize();
     return 0;
 }
-
