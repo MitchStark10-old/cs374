@@ -16,7 +16,7 @@
 
 // global variables (shared by all threads 
 volatile long double pi = 0.0;       // our approximation of PI 
-volatile unsigned long * localSums;
+volatile long double * localSums;
 pthread_mutex_t      piLock;         // how we synchronize writes to 'pi' 
 long double          intervals = 0;  // how finely we chop up the integration 
 unsigned long        numThreads = 0; // how many threads we use 
@@ -24,10 +24,12 @@ unsigned long        numThreads = 0; // how many threads we use
 /*
 Takes array of local sums to sum into a value to be added to the pi variable
 */
-unsigned long reduce(unsigned long numThreads) {
-    unsigned long sum = 0;
-    for(int i = 0; i < numThreads; i++) {
+long double reduce(long double numThreads) {
+    long double sum = 0;
+    for(unsigned long i = 0; i < numThreads; i++) {
+        printf("Local sum array value - %Lf\n", localSums[i]);
         sum += localSums[i];
+        printf("Sum value - %Lf\n", sum);
     }
     return sum;
 }
@@ -57,11 +59,13 @@ void * computePI(void * arg)
     localSum *= width;
     printf("Before thread id# - %lu\n", threadID);
     printf("Num threads: %lu\n", numThreads);
+    printf("Local sum variable - %Lf\n", localSum);
     localSums[threadID] = localSum;
     printf("After\n");
     pthreadBarrier(numThreads);
 
     if (threadID == 0) {
+        printf("Reduce return values is: %Lf\n", reduce(numThreads));
         pi += reduce(numThreads);        
     }
 
@@ -102,7 +106,7 @@ int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
 
-    localSums = malloc(numThreads*sizeof(unsigned long));
+    localSums = malloc(numThreads*sizeof(long double));
     threads = malloc(numThreads*sizeof(pthread_t));
     threadID = malloc(numThreads*sizeof(unsigned long));
     pthread_mutex_init(&piLock, NULL);
