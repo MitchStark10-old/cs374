@@ -12,7 +12,7 @@
 #include <stdlib.h>                // strtoul(), exit(), ...
 #include <pthread.h>               // pthreads
 #include <mpi.h>                   // MPI_Wtime()
-#include "pthreadBarrier.h"
+#include "reduce.h"
 
 // global variables (shared by all threads 
 volatile long double pi = 0.0;       // our approximation of PI 
@@ -20,19 +20,6 @@ volatile long double * localSums;
 pthread_mutex_t      piLock;         // how we synchronize writes to 'pi' 
 long double          intervals = 0;  // how finely we chop up the integration 
 unsigned long        numThreads = 0; // how many threads we use 
-
-/*
-Takes array of local sums to sum into a value to be added to the pi variable
-*/
-long double reduce(long double numThreads) {
-    long double sum = 0;
-    for(unsigned long i = 0; i < numThreads; i++) {
-        printf("Local sum array value - %Lf\n", localSums[i]);
-        sum += localSums[i];
-        printf("Sum value - %Lf\n", sum);
-    }
-    return sum;
-}
 
 /* compute PI using the parallel for loop pattern
  * Parameters: arg, a void* 
