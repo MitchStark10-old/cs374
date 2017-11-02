@@ -44,11 +44,7 @@ void * computePI(void * arg)
     }
     
     localSum *= width;
-    printf("Before thread id# - %lu\n", threadID);
-    printf("Num threads: %lu\n", numThreads);
-    printf("Local sum variable - %Lf\n", localSum);
     localSums[threadID] = localSum;
-    printf("After\n");
     pthreadBarrier(numThreads);
 
     if (threadID == 0) {
