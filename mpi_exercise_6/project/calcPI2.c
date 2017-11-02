@@ -4,6 +4,8 @@
  *  the for loop below approximates that integration.
  *
  * Joel Adams, Calvin College, Fall 2013.
+ * Mitch Stark, Calvin College, Fall 2017
+ * Additions made to remove the sequential access of the pi variable
  *
  * Usage: ./calcPI2 [numIntervals] [numThreads]
  */

@@ -1,3 +1,11 @@
+/*
+* Mitch Stark, Fall 2017, Calvin College
+* Purpose of this reduce function is to take in an array
+* that is accessed by all threads to reduce the local values
+* of each thread into a single value (in this case a sum).
+* A pthreadBarrier() call is made before calling this to ensure
+* that all values have entered the array before summing
+*/
 #include <stdio.h>                 // printf(), fprintf(), etc.
 #include <stdlib.h>                // strtoul(), exit(), ...
 #include <pthread.h>               // pthreads
