@@ -11,7 +11,7 @@ func worker(wg *sync.WaitGroup, id int) {
 
     fmt.Printf("Worker %v: Started\n", id)
     time.Sleep(time.Second)
-    fmt.Printf("Worker %v: Finished\n", id)
+	fmt.Printf("Worker %v: Finished\n", id)
 }
 
 func main() {  
