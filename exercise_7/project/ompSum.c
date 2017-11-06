@@ -83,28 +83,15 @@ void readArray(char * fileName, double ** a, int * n) {
  */
 
 double sumArray(double * a, int numValues) {
-    int i, id, chunk_size, start_val, num_threads;
-    double partial_sum = 0.0, result = 0.0;
+    int i;
+    double result = 0.0;
 
-    #pragma omp parallel private(id, start_val, chunk_size, partial_sum, i) 
-    {
-        id = omp_get_thread_num();
-        num_threads = omp_get_num_threads();
-        
-        chunk_size = numValues / num_threads;
-        
-        start_val = chunk_size * id;
-
-        if (id == (num_threads - 1)) {
-            chunk_size += numValues % num_threads;
-        }
-
-        for (i = start_val; i < start_val + chunk_size; i++) {
-            partial_sum += a[i];
-        }
-        
-        #pragma omp atomic
-        result += partial_sum;
+    //Need to use #pragma omp parallel for reduction(:+result)
+    //Example is in reduction
+    //#pragma omp parallel private(id, start_val, chunk_size, partial_sum, i) 
+    #pragma omp parallel for reduction(+:result)
+    for (i = 0; i < numValues; i++) {
+        result += a[i];
     }
 
     return result;
