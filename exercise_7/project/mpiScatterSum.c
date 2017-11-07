@@ -20,8 +20,7 @@ int main(int argc, char * argv[])
     int id;
     int num_processes;
     double * sub_a;
-    double partial_sum;
-    double total_sum;
+    double partial_sum, total_sum, start_program_time, start_io_time, start_scatter_time, start_sum_time, end_program_time, end_scatter_time, end_io_time, end_sum_time;
     double * a;
 
     if (argc != 2) {
@@ -33,9 +32,14 @@ int main(int argc, char * argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
 
+    start_program_time = MPI_Wtime();
+
     if (id == 0) {
+        start_io_time = MPI_Wtime();
         readArray(argv[1], &a, &howMany);
+        end_io_time = MPI_Wtime();
     }
+
     MPI_Bcast(&howMany, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
     chunk_size = howMany / num_processes;
@@ -45,18 +49,25 @@ int main(int argc, char * argv[])
 
     //send array to all the processes
     sub_a = malloc(sizeof(double) * chunk_size);
-    MPI_Scatter(a, chunk_size, MPI_DOUBLE, sub_a, chunk_size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    
 
+    start_scatter_time = MPI_Wtime();
+    MPI_Scatter(a, chunk_size, MPI_DOUBLE, sub_a, chunk_size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    end_scatter_time = MPI_Wtime();
+    
+    start_sum_time = MPI_Wtime();
     partial_sum = sumArray(sub_a, chunk_size);
+    end_sum_time = MPI_Wtime();
 
     MPI_Reduce(&partial_sum, &total_sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     MPI_Finalize();
 
+    end_program_time = MPI_Wtime();
     if (id == 0) {
         printf("The sum of the values in the input file '%s' is %g\n",
                 argv[1], total_sum);
+        printf("Total time: %lf\nIO time: %lf\nScatter time: %lf\nSum time: %lf\n", end_program_time - start_program_time,
+                end_io_time - start_io_time, end_scatter_time - start_scatter_time, end_sum_time - start_sum_time);
     }
 
     free(sub_a);
