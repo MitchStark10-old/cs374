@@ -15,22 +15,35 @@ double sumArray(double * a, int numValues) ;
 
 int main(int argc, char * argv[])
 {
-    int howMany;
-    double sum;
+    int howMany, numThreads;
+    double sum, start_program_time, start_io_time, start_sum_time, end_program_time, end_io_time, end_sum_time;
     double * a;
 
-    if (argc != 2) {
-        fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
+    if (argc != 3) {
+        fprintf(stderr, "\n*** Usage: arraySum <inputFile> <numThreads>\n\n");
         exit(1);
     }
 
-    //master reads array
-    readArray(argv[1], &a, &howMany);
+    numThreads = atoi(argv[2]);
+    omp_set_num_threads(numThreads);
 
+    start_program_time = omp_get_wtime();
+
+    //master reads array
+    start_io_time = omp_get_wtime();
+    readArray(argv[1], &a, &howMany);
+    end_io_time = omp_get_wtime();
+
+    start_sum_time = omp_get_wtime();
     sum = sumArray(a, howMany);
+    end_sum_time = omp_get_wtime();
+
+    end_program_time = omp_get_wtime();
 
     //master prints
     printf("The sum of the values in the input file '%s' is %g\n", argv[1], sum);
+    printf("Total Time: %lf\nIO Time: %lf\nSum Time: %lf\n", end_program_time - start_program_time,
+            end_io_time - start_io_time, end_sum_time - start_sum_time);
 
     free(a);
 
