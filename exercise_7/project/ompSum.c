@@ -15,22 +15,35 @@ double sumArray(double * a, int numValues) ;
 
 int main(int argc, char * argv[])
 {
-    int howMany;
-    double sum;
+    int howMany, numThreads;
+    double sum, start_program_time, start_io_time, start_sum_time, end_program_time, end_io_time, end_sum_time;
     double * a;
 
-    if (argc != 2) {
-        fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
+    if (argc != 3) {
+        fprintf(stderr, "\n*** Usage: arraySum <inputFile> <numThreads>\n\n");
         exit(1);
     }
 
-    //master reads array
-    readArray(argv[1], &a, &howMany);
+    numThreads = atoi(argv[2]);
+    omp_set_num_threads(numThreads);
 
+    start_program_time = omp_get_wtime();
+
+    //master reads array
+    start_io_time = omp_get_wtime();
+    readArray(argv[1], &a, &howMany);
+    end_io_time = omp_get_wtime();
+
+    start_sum_time = omp_get_wtime();
     sum = sumArray(a, howMany);
+    end_sum_time = omp_get_wtime();
+
+    end_program_time = omp_get_wtime();
 
     //master prints
     printf("The sum of the values in the input file '%s' is %g\n", argv[1], sum);
+    printf("Total Time: %lf\nIO Time: %lf\nSum Time: %lf\n", end_program_time - start_program_time,
+            end_io_time - start_io_time, end_sum_time - start_sum_time);
 
     free(a);
 
@@ -83,28 +96,15 @@ void readArray(char * fileName, double ** a, int * n) {
  */
 
 double sumArray(double * a, int numValues) {
-    int i, id, chunk_size, start_val, num_threads;
-    double partial_sum = 0.0, result = 0.0;
+    int i;
+    double result = 0.0;
 
-    #pragma omp parallel private(id, start_val, chunk_size, partial_sum, i) 
-    {
-        id = omp_get_thread_num();
-        num_threads = omp_get_num_threads();
-        
-        chunk_size = numValues / num_threads;
-        
-        start_val = chunk_size * id;
-
-        if (id == (num_threads - 1)) {
-            chunk_size += numValues % num_threads;
-        }
-
-        for (i = start_val; i < start_val + chunk_size; i++) {
-            partial_sum += a[i];
-        }
-        
-        #pragma omp atomic
-        result += partial_sum;
+    //Need to use #pragma omp parallel for reduction(:+result)
+    //Example is in reduction
+    //#pragma omp parallel private(id, start_val, chunk_size, partial_sum, i) 
+    #pragma omp parallel for reduction(+:result)
+    for (i = 0; i < numValues; i++) {
+        result += a[i];
     }
 
     return result;
