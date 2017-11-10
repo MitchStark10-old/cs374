@@ -26,7 +26,7 @@ int main (int argc, char *argv[]) {
 
    #pragma omp parallel reduction(+:value) 
    {
-//      #pragma omp master
+      #pragma omp master
       {
          if ( processID == 0 ) {
             value = 1;
