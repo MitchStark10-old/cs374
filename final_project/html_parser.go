@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-
+	"strings"
+	"sync"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -19,15 +20,42 @@ func getSiteList() [5]string {
 
 func main() {
 	sites := getSiteList()
+	var game_links []string;
+	var wg sync.WaitGroup;
 
 	for _, site := range sites {
-		fmt.Printf("Site: %s\n", site)
-		doc, err := goquery.NewDocument(site)
-
-		if (err != nil) {
-			fmt.Printf("Fatal error: %s\n", err);
-		}
-
-		fmt.Println("Here is the doc:", doc);
+		wg.Add(1);
+		go func() {
+			game_links = append(game_links, getLinks(site, &wg)...);
+		}()
 	}
+
+	wg.Wait();	
+
+	for _, link := range game_links {
+		fmt.Println("Link:", link);
+	}
+}
+
+func getLinks(site string, wg *sync.WaitGroup) []string {
+	defer wg.Done();
+	var hrefs []string;
+
+	doc, err := goquery.NewDocument(site)
+
+	if (err != nil) {
+		fmt.Printf("Fatal error: %s\n", err);
+		return hrefs;
+	}
+
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Attr("href");
+
+		if (strings.Contains(href, "boxscores")) {
+			//fmt.Println("Found link:", site + href);
+			hrefs = append(hrefs, site + href);
+		}
+	})
+
+	return hrefs;
 }
