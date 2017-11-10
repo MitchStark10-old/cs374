@@ -4,7 +4,6 @@
 *.txt
 *.o
 */run
-spmd
 Fire
 parallelLoopSlices
 parallelLoopChunks
