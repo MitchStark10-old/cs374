@@ -24,6 +24,7 @@ int main (int argc, char *argv[]) {
    omp_set_num_threads( NUM_THREADS );
    #pragma omp parallel reduction(+:value) 
    {
+      printf("Executing process %d - thread %d\n", processID, omp_get_thread_num());
       value = omp_get_thread_num();
    }
 
