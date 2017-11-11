@@ -37,9 +37,10 @@ func main() {
 	wg.Wait();	
 
 	for _, link := range game_links {
-		fmt.Println("Link:", link);
-		findAndPrintScores(link);
+		wg.Add(1);
+		go findAndPrintScores(link, &wg);
 	}
+	wg.Wait();
 }
 
 func getLinks(site string, wg *sync.WaitGroup) []string {
@@ -67,7 +68,10 @@ func getLinks(site string, wg *sync.WaitGroup) []string {
 	return hrefs;
 }
 
-func findAndPrintScores(game_link string) {
+func findAndPrintScores(game_link string, wg *sync.WaitGroup) {
+	defer wg.Done();
+
+	print_text := "Link: " + game_link + "\n";
 	doc, err := goquery.NewDocument(game_link);
 
 	if (err != nil) {
@@ -81,7 +85,8 @@ func findAndPrintScores(game_link string) {
 			name := standardizeSpaces(s.Find("th").First().Text());
 			score := s.Find(".score.total").Text();
 
-			fmt.Printf("%s - %s\n\n", name, score)
+			print_text += name + " - " + score + "\n"
+			//fmt.Printf("%s - %s\n\n", name, score)
 		}
 	})
 	// var winner *goquery.Selection = doc.Find(".winner");
@@ -95,6 +100,7 @@ func findAndPrintScores(game_link string) {
 
 	// fmt.Printf("\n%s - %s\n", winner_name, winner_score);
 	// fmt.Printf("%s - %s\n\n", loser_name, loser_socre);
+	fmt.Println(print_text);
 }
 
 func standardizeSpaces(s string) string {
