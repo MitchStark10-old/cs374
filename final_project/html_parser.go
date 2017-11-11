@@ -20,20 +20,25 @@ func getSiteList() [5]string {
 
 func main() {
 	sites := getSiteList()
+	mux := &sync.Mutex{}
 	var game_links []string;
 	var wg sync.WaitGroup;
 
 	for _, site := range sites {
 		wg.Add(1);
-		go func() {
-			game_links = append(game_links, getLinks(site, &wg)...);
-		}()
+		go func(site string) {
+			links := getLinks(site, &wg);
+			mux.Lock();
+			game_links = append(game_links, links...);
+			mux.Unlock();
+		}(site)
 	}
 
 	wg.Wait();	
 
 	for _, link := range game_links {
 		fmt.Println("Link:", link);
+		findAndPrintScores(link);
 	}
 }
 
@@ -52,10 +57,46 @@ func getLinks(site string, wg *sync.WaitGroup) []string {
 		href, _ := s.Attr("href");
 
 		if (strings.Contains(href, "boxscores")) {
-			//fmt.Println("Found link:", site + href);
-			hrefs = append(hrefs, site + href);
+			//fmt.Println("Found link:", strings.Replace(site, "/sports/msoc/2017-18/schedule", "", -1) + href);
+			main_site := strings.Replace(site, "/sports/msoc/2017-18/schedule", "", -1)
+			main_site = strings.Replace(main_site, "/sports/m-soccer/2017-18/schedule", "", -1)
+			hrefs = append(hrefs,  main_site + href);
 		}
 	})
 
 	return hrefs;
+}
+
+func findAndPrintScores(game_link string) {
+	doc, err := goquery.NewDocument(game_link);
+
+	if (err != nil) {
+		fmt.Printf("Fatal error: %s\n", err);
+		return;
+	}
+
+	var line_score *goquery.Selection = doc.Find(".linescore");
+	line_score.Find("tr").Each(func(i int, s *goquery.Selection) {
+		if (i != 0) {
+			name := standardizeSpaces(s.Find("th").First().Text());
+			score := s.Find(".score.total").Text();
+
+			fmt.Printf("%s - %s\n\n", name, score)
+		}
+	})
+	// var winner *goquery.Selection = doc.Find(".winner");
+	// var winner_name = standardizeSpaces(winner.Find("th").First().Text());
+	// var winner_score = winner.Find(".score.total").Text();
+
+	// var loser *goquery.Selection = doc.Find(".loser");
+	// var loser_name = standardizeSpaces(loser.Find("th").First().Text());
+	// var loser_socre = loser.Find(".score.total").Text();
+
+
+	// fmt.Printf("\n%s - %s\n", winner_name, winner_score);
+	// fmt.Printf("%s - %s\n\n", loser_name, loser_socre);
+}
+
+func standardizeSpaces(s string) string {
+    return strings.Join(strings.Fields(s), " ")
 }
