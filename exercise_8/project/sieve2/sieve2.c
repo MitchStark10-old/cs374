@@ -8,6 +8,7 @@
  */
 
 #include "mpi.h"
+#include "omp.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +52,8 @@ int main (int argc, char ** argv) {
         MPI_Finalize();
         exit(1);
     }
+
+    omp_set_num_threads(4);
 
     // Figure out this process's share of the array, as well as the integers
     // represented by the first and last array elements.
