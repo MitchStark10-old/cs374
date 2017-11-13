@@ -8,7 +8,6 @@
  */
 
 #include "mpi.h"
-#include "omp.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,8 +52,6 @@ int main (int argc, char ** argv) {
         exit(1);
     }
 
-    omp_set_num_threads(4);
-
     // Figure out this process's share of the array, as well as the integers
     // represented by the first and last array elements.
     low_value  = 2 + (long int)(comm_rank) * (long int)(n - 1) / (long int)comm_size;
@@ -70,36 +67,35 @@ int main (int argc, char ** argv) {
     }
 
     if (comm_rank == 0) index = 0;
+    prime = 2;
 
-    #pragma omp parallel private(prime, first)
-    {
-        prime = 2 + omp_get_thread_num();
-        do {
-            printf("Working on %d\n", prime);
-            fflush(stdout);
-            if (prime * prime > low_value) {
-                first = prime * prime - low_value;
-            } else {
-                if ((low_value % prime) == 0) first = 0;
-                else first = prime - (low_value % prime);
-            }
+    do {
+        if (prime * prime > low_value) {
+            first = prime * prime - low_value;
+        } else {
+            if ((low_value % prime) == 0) first = 0;
+            else first = prime - (low_value % prime);
+        }
 
-            printf("Marking for %d\n", prime);
-            fflush(stdout);
-            for (i = first; i < size; i += prime) marked[i] = 1;
+        #pragma omp parallel for
+        for (i = first; i < size; i += prime) marked[i] = 1;
 
-            printf("Finding new prime (started at %d)\n", prime);
-            fflush(stdout);
+        if (comm_rank == 0) {
             while (marked[++index]);
             prime = index + 2;
+        }
 
-            if (comm_size > 1) MPI_Bcast(&marked, size, MPI_INT, 0, MPI_COMM_WORLD);
-        } while (prime * prime <= n);
-    }
+        if (comm_size > 1) MPI_Bcast(&prime,  1, MPI_INT, 0, MPI_COMM_WORLD);
+    } while (prime * prime <= n);
 
     count = 0;
 
-    for (i = 0; i < size; i++) if (marked[i] == 0) count++;
+    #pragma omp parallel for reduction(+:count)
+    for (i = 0; i < size; i++) {
+        if (marked[i] == 0) {
+            count++;
+        }
+    }
 
     if (comm_size > 1) {
         MPI_Reduce(&count, &global_count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -117,3 +113,5 @@ int main (int argc, char ** argv) {
     MPI_Finalize();
     return 0;
 }
+
+
