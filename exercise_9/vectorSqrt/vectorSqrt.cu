@@ -31,13 +31,13 @@
  * The 3 vectors have the same number of elements numElements.
  */
     __global__
-void vectorAdd(const float *A, const float *B, float *C, unsigned long numElements)
+void vectorMult(const float *A, float *C, unsigned long numElements)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (i < numElements)
     {
-        C[i] = A[i] + B[i];
+        C[i] = sqrt(A[i]);
     }
 }
 
@@ -75,13 +75,12 @@ int main(int argc, char** argv)
 
     // Allocate the host input vectors A & B
     float *h_A = (float *)malloc(size);
-    float *h_B = (float *)malloc(size);
 
     // Allocate the host output vector C
     float *h_C = (float *)malloc(size);
 
     // Verify that allocations succeeded
-    if (h_A == NULL || h_B == NULL || h_C == NULL)
+    if (h_A == NULL || h_C == NULL)
     {
         fprintf(stderr, "Failed to allocate host vectors!\n");
         exit(EXIT_FAILURE);
@@ -91,16 +90,12 @@ int main(int argc, char** argv)
     for (int i = 0; i < numElements; ++i)
     {
         h_A[i] = rand()/(float)RAND_MAX;
-        h_B[i] = rand()/(float)RAND_MAX;
     }
 
     // 1a. Allocate the device input vectors A & B
     float *d_A = NULL;
     err = cudaMalloc((void **)&d_A, size);
     checkErr(err, "Failed to allocate device vector A");
-    float *d_B = NULL;
-    err = cudaMalloc((void **)&d_B, size);
-    checkErr(err, "Failed to allocate device vector B");
 
     // 1.b. Allocate the device output vector C
     float *d_C = NULL;
@@ -115,19 +110,15 @@ int main(int argc, char** argv)
     copy_to_device_end = omp_get_wtime();
     checkErr(err, "Failed to copy device vector A from host to device");
 
-
-    err = cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
-    checkErr(err, "Failed to copy device vector B from host to device");
-
     // 3. Launch the Vector Add CUDA Kernel
     int threadsPerBlock = 256;
     int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
     //printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
     compute_start = omp_get_wtime();
-    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
+    vectorMult<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_C, numElements);
     compute_end = omp_get_wtime();
     err = cudaGetLastError();
-    checkErr(err, "Failed to launch vectorAdd kernel");
+    checkErr(err, "Failed to launch vectorMult kernel");
 
     // 4. Copy the device result vector in device memory
     //     to the host result vector in host memory.
@@ -146,7 +137,7 @@ int main(int argc, char** argv)
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) > 1e-5)
+        if (fabs(sqrt(h_A[i]) - h_C[i]) > 1e-5)
         {
             fprintf(stderr, "Result verification failed at element %d!\n", i);
             exit(EXIT_FAILURE);
@@ -159,22 +150,19 @@ int main(int argc, char** argv)
     err = cudaFree(d_A);
     checkErr(err, "Failed to free device vector A");
 
-    err = cudaFree(d_B);
-    checkErr(err, "Failed to free device vector B");
-
     err = cudaFree(d_C);
     checkErr(err, "Failed to free device vector C");
 
     // repeat the computation sequentially
     for (int i = 0; i < numElements; ++i)
     {
-        h_C[i] = h_A[i] + h_B[i];
+        h_C[i] = sqrt(h_A[i]);
     }
 
     // verify again
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) > 1e-5)
+        if (fabs(sqrt(h_A[i]) - h_C[i]) > 1e-5)
         {
             fprintf(stderr, "Result verification failed at element %d!\n", i);
             exit(EXIT_FAILURE);
@@ -185,7 +173,6 @@ int main(int argc, char** argv)
 
     // Free host memory
     free(h_A);
-    free(h_B);
     free(h_C);
 
     // Reset the device and exit
