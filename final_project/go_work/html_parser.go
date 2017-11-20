@@ -46,6 +46,7 @@ func main() {
 	elapsed := time.Since(start_time);
 
 	fmt.Println("Execution time:", elapsed);
+	fmt.Printf("Found [%d] games\n", len(game_links));
 }
 
 func getLinks(site string, wg *sync.WaitGroup) []string {

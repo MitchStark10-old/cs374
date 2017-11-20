@@ -1,6 +1,7 @@
 import urllib.request as urllib2
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
+import time
 import re
 
 def getSiteList():
@@ -23,8 +24,7 @@ def getSchedule(site):
     for link in game_links:
         new_game = str(site).replace("/sports/msoc/2017-18/schedule", "").replace("/sports/m-soccer/2017-18/schedule", "") + link['href']
         schedule.append(new_game)
-    for game_link in list(set(schedule)):
-        getScore(game_link)
+    return list(set(schedule))
 
 def getScore(game_link):
     summary_str = ""
@@ -45,6 +45,14 @@ def getScore(game_link):
     
     print(summary_str)
 
+start = time.time()
+
 site_list = getSiteList()
 pool = Pool()
-pool.map(getSchedule, site_list)
+game_links = pool.map(getSchedule, site_list)
+flat_game_links = [item for sublist in game_links for item in sublist]
+pool.map(getScore, flat_game_links)
+
+end = time.time()
+print("Execution time: " + str(end - start))
+print("Found [" + str(len(flat_game_links)) + "] games")

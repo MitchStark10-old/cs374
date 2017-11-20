@@ -1,5 +1,6 @@
 import urllib.request as urllib2
 from bs4 import BeautifulSoup
+import time
 import re
 
 def getSiteList():
@@ -43,6 +44,8 @@ def getScore(game_link):
     
     print(summary_str)
 
+start = time.time()
+
 site_list = getSiteList()
 schedule = []
 for site in site_list:
@@ -50,3 +53,8 @@ for site in site_list:
 
 for game_link in schedule:
     getScore(game_link)
+
+end = time.time()
+
+print("Execution time: " + str(end - start))
+print("Found [" + str(len(schedule)) + "] games")
