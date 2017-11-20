@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -19,8 +20,9 @@ func getSiteList() [5]string {
 }
 
 func main() {
-	sites := getSiteList()
-	mux := &sync.Mutex{}
+	start_time := time.Now();
+	sites := getSiteList();
+	mux := &sync.Mutex{};
 	var game_links []string;
 	var wg sync.WaitGroup;
 
@@ -41,6 +43,9 @@ func main() {
 		go findAndPrintScores(link, &wg);
 	}
 	wg.Wait();
+	elapsed := time.Since(start_time);
+
+	fmt.Println("Execution time:", elapsed);
 }
 
 func getLinks(site string, wg *sync.WaitGroup) []string {
