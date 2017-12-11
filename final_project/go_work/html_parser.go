@@ -14,8 +14,7 @@ func getSiteList() [5]string {
 	sites[1] = "http://athletics.hope.edu/sports/msoc/2017-18/schedule";
 	sites[2] = "http://hornets.kzoo.edu/sports/msoc/2017-18/schedule";
 	sites[3] = "http://www.adrianbulldogs.com/sports/m-soccer/2017-18/schedule";
-	sites[4] = "http://www.gobrits.com/sports/msoc/2017-18/schedule";
-
+    sites[4] = "http://www.gobrits.com/sports/msoc/2017-18/schedule";
 	return sites;
 }
 
@@ -36,9 +35,12 @@ func main() {
 		}(site)
 	}
 
-	wg.Wait();	
+	wg.Wait();
 
 	for _, link := range game_links {
+        if (strings.Contains(link, "wbkb")) {
+            continue;
+        }
 		wg.Add(1);
 		go findAndPrintScores(link, &wg);
 	}
